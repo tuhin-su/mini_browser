@@ -1,0 +1,72 @@
+#!/bin/env python3
+import sys
+import os
+from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
+from PyQt5.QtCore import QUrl, Qt
+
+class MinimalBrowser(QMainWindow):
+    def __init__(self, url):
+        super().__init__()
+        self.setWindowTitle("Minimal Browser")
+
+        # Create a web engine view
+        self.browser = QWebEngineView()
+        self.setCentralWidget(self.browser)
+
+        # Set User-Agent
+        self.set_user_agent()
+
+        # Load the provided URL
+        self.load_url(url)
+
+        # Bind the Esc key to go back to the previous page
+        self.bind_keys()
+
+    def set_user_agent(self):
+        # Set a custom User-Agent to mimic the latest Chrome
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+        profile = QWebEngineProfile.defaultProfile()
+        profile.setHttpUserAgent(user_agent)
+
+    def load_url(self, url):
+        # Convert the string URL to a QUrl object
+        self.browser.setUrl(QUrl(url))
+
+    def bind_keys(self):
+        # Bind the Esc key to go back
+        esc_shortcut = QShortcut(Qt.Key_Escape, self)
+        esc_shortcut.activated.connect(self.go_back)
+
+    def go_back(self):
+        # Go back to the previous page if possible
+        if self.browser.history().canGoBack():
+            self.browser.back()
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python minimal_browser.py <URL>")
+        sys.exit(1)
+
+    url = sys.argv[1]
+
+    # Remove existing temporary user data
+    temp_dir = "/tmp/minimal_browser_data"
+    if os.path.exists(temp_dir):
+        os.rmdir(temp_dir)
+
+    app = QApplication(sys.argv)
+    
+    # Set the environment variable for remote debugging
+    os.environ["QTWEBENGINE_REMOTE_DEBUGGING"] = "9222"
+
+    browser = MinimalBrowser(url)
+    browser.show()
+    app.exec_()
+
+    # Cleanup after the browser is closed
+    if os.path.exists(temp_dir):
+        os.rmdir(temp_dir)
+
+if __name__ == "__main__":
+    main()
